@@ -4,7 +4,7 @@ class LexicalAnalyzer:
     # The line number of the current token
     line_number = 1
 
-    def tokenize(self, code):
+    def tokenize(self, code, file="output.txt"):
         
         rules = [
             ('MAIN', r'main'),          # main
@@ -54,31 +54,32 @@ class LexicalAnalyzer:
         rows = []
         columns = []
 
-        for match in re.finditer(tokens_regex, code):
-            token_type = match.lastgroup
-            token_lexeme = match.group(token_type)
+        with open(file, 'w') as f:
+            for match in re.finditer(tokens_regex, code):
+                token_type = match.lastgroup
+                token_lexeme = match.group(token_type)
 
-            if token_type == 'NEWLINE':
-                # Update the starting index of the current line
-                line_start = match.end()
-                # Increment the line number by 1
-                self.line_number += 1
-            elif token_type == 'SKIP':
-                # Skip the following match
-                continue
-            elif token_type == 'MISMATCH':
-                # Raise an error for an unexpected character
-                raise RuntimeError(f"{token_lexeme} unexpected on line {self.line_number}")
-            else:
-                # Calculating the column number of the match
-                column = match.start() - line_start
-                # Append the token to the output lists
-                tokens.append(token_type)
-                lexemes.append(token_lexeme)
-                rows.append(self.line_number)
-                columns.append(column)
-                # Print the token infos
-                print(f'Token = {token_type}, Lexeme = "{token_lexeme}", Row = {self.line_number}, Column = {column}')
+                if token_type == 'NEWLINE':
+                    # Update the starting index of the current line
+                    line_start = match.end()
+                    # Increment the line number by 1
+                    self.line_number += 1
+                elif token_type == 'SKIP':
+                    # Skip the following match
+                    continue
+                elif token_type == 'MISMATCH':
+                    # Raise an error for an unexpected character
+                    raise RuntimeError(f"{token_lexeme} unexpected on line {self.line_number}")
+                else:
+                    # Calculating the column number of the match
+                    column = match.start() - line_start
+                    # Append the token to the output lists
+                    tokens.append(token_type)
+                    lexemes.append(token_lexeme)
+                    rows.append(self.line_number)
+                    columns.append(column)
+                    # Print the token infos
+                    print(f'Token = {token_type}, Lexeme = "{token_lexeme}", Row = {self.line_number}, Column = {column}', file=f)
 
         # Return the output lists
         return tokens, lexemes, rows, columns
