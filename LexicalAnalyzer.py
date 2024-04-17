@@ -1,11 +1,11 @@
 import re
 
-
 class LexicalAnalyzer:
-    # Token row
-    lin_num = 1
+    # The line number of the current token
+    line_number = 1
 
     def tokenize(self, code):
+        
         rules = [
             ('MAIN', r'main'),          # main
             ('INT', r'int'),            # int
@@ -35,41 +35,50 @@ class LexicalAnalyzer:
             ('MULT', r'\*'),            # *
             ('DIV', r'\/'),             # /
             ('ID', r'[a-zA-Z]\w*'),     # IDENTIFIERS
-            ('FLOAT_CONST', r'\d(\d)*\.\d(\d)*'),   # FLOAT
-            ('INTEGER_CONST', r'\d(\d)*'),          # INT
+            ('FLOAT_CONST', r'\d+(\.\d*)?'),   # FLOAT
+            ('INTEGER_CONST', r'\d+'),          # INT
             ('NEWLINE', r'\n'),         # NEW LINE
             ('SKIP', r'[ \t]+'),        # SPACE and TABS
             ('MISMATCH', r'.'),         # ANOTHER CHARACTER
         ]
 
-        tokens_join = '|'.join('(?P<%s>%s)' % x for x in rules)
-        lin_start = 0
+        
+        tokens_regex = '|'.join(f'(?P<{name}>{pattern})' for name, pattern in rules)
 
-        # Lists of output for the program
-        token = []
-        lexeme = []
-        row = []
-        column = []
+        # The starting index of the current line
+        line_start = 0
 
-        # It analyzes the code to find the lexemes and their respective Tokens
-        for m in re.finditer(tokens_join, code):
-            token_type = m.lastgroup
-            token_lexeme = m.group(token_type)
+        # Initializing lists to store the output tokens, lexemes, row numbers, and column numbers
+        tokens = []
+        lexemes = []
+        rows = []
+        columns = []
+
+        for match in re.finditer(tokens_regex, code):
+            token_type = match.lastgroup
+            token_lexeme = match.group(token_type)
 
             if token_type == 'NEWLINE':
-                lin_start = m.end()
-                self.lin_num += 1
+                # Update the starting index of the current line
+                line_start = match.end()
+                # Increment the line number by 1
+                self.line_number += 1
             elif token_type == 'SKIP':
+                # Skip the following match
                 continue
             elif token_type == 'MISMATCH':
-                raise RuntimeError('%r unexpected on line %d' % (token_lexeme, self.lin_num))
+                # Raise an error for an unexpected character
+                raise RuntimeError(f"{token_lexeme} unexpected on line {self.line_number}")
             else:
-                    col = m.start() - lin_start
-                    column.append(col)
-                    token.append(token_type)
-                    lexeme.append(token_lexeme)
-                    row.append(self.lin_num)
-                    # To print information about a Token
-                    print('Token = {0}, Lexeme = \'{1}\', Row = {2}, Column = {3}'.format(token_type, token_lexeme, self.lin_num, col))
+                # Calculating the column number of the match
+                column = match.start() - line_start
+                # Append the token to the output lists
+                tokens.append(token_type)
+                lexemes.append(token_lexeme)
+                rows.append(self.line_number)
+                columns.append(column)
+                # Print the token infos
+                print(f'Token = {token_type}, Lexeme = "{token_lexeme}", Row = {self.line_number}, Column = {column}')
 
-        return token, lexeme, row, column
+        # Return the output lists
+        return tokens, lexemes, rows, columns
